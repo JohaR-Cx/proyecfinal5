@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Información sobre la energía solar, una fuente de energía limpia y sostenible.">
+    <meta name="keywords" content="Energía Solar, Energía Limpia, Energía Renovable">
+    <meta name="author" content="Johana Ramirez">
+    <title>Energía Solar</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        header {
+            background: url('https://via.placeholder.com') no-repeat center center;
+            background-size: cover;
+            color: white;
+            text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.7);
+            text-align: center;
+            padding: 50px 0;
+        }
+        #solar-info .card {
+            margin-bottom: 20px;
+        }
+        .result {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 18px;
+            background-color: #c2c5c2;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            text-align: center;
+        }
+        #visualizacion .g{
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container">
+            <a class="navbar-brand" href="#">Energía Solar</a>
+        </div>
+    </nav>
+    <header>
+        <h1 class="display-4 fw-bold text-center"style="color: #A7D477;">Energía Solar</h1>
+        <p class="lead text-center"style="color: black;">Descubre cómo la energía solar puede transformar el mundo.
+            La energía solar es una fuente de energía renovable y limpia que reduce la dependencia de los combustibles fósiles y las emisiones de gases de efecto invernadero.
+        </p>
+    </header>
+    <main class="container mt-4">
+        <div id="solar-info" class="row"></div>
+
+        <!-- Calculadora -->
+        <section id="calculadora" class="mt-5">
+            <center><h2 class="text-success">Calculadora Solar</h2></center>
+            <div class="form-container mx-auto">
+                <div class="input-group">
+                    <label for="electrodomestico" class="fw-bold">Electrodoméstico:</label>
+                    <input type="text" id="electrodomestico" placeholder="Ejemplo: Refrigerador" class="form-control" />
+                </div>
+                <div class="input-group mt-3">
+                    <label for="consumo"class="fw-bold">Consumo mensual en kWh:</label>
+                    <input type="number" id="consumo" placeholder="Ejemplo: 50" class="form-control" />
+                </div>
+                <div class="d-flex justify-content-between mt-3">
+                    <button class="btn btn-success" onclick="agregarElectrodomestico()">Agregar</button>
+                    <button class="btn btn-primary" onclick="calcular()">Calcular</button>
+                </div>
+            </div>
+
+            <center><h3 class="mt-4">Electrodomésticos Ingresados:</h3></center>
+            <ul id="listaElectrodomesticos" class="list-group mx-auto" style="max-width: 600px;"></ul>
+
+            <div id="resultado" class="result mt-4" style="display: none;">
+                <h3>Resultado:</h3>
+                <p id="paneles"></p>
+            </div>
+        </section>
+
+        <!-- Carga de datos y gráficos -->
+        <section id="visualizacion" class="mt-5">
+            <center><h2 class="text-primary">Visualización de Datos</h2></center>
+            <button id="cargarDatos" class="btn btn-primary mb-3">Cargar Datos</button>
+           <div class="g">
+            <div id="contenido"></div>
+            <div id="grafico" class="mt-4"></div>
+           </div>
+        </section>
+    </main>
+    <footer class="bg-primary text-white text-center py-3">
+        <p>&copy; 2024 Energía Solar. Todos los derechos reservados.</p>
+    </footer>
+
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+    <script>
+        $(document).ready(function () {
+            // Obtener datos del backend
+            $.getJSON("/data", function (data) {
+                let content = '';
+                data.forEach(function (item) {
+                    content += `
+                        <div class="col-md-4">
+                            <div class="card">
+                                <img src="${item.image}" class="card-img-top" alt="${item.title}">
+                                <div class="card-body">
+                                    <h5 class="card-title">${item.title}</h5>
+                                    <p class="card-text">${item.description}</p>
+                                    ${item.benefits ? `
+                                        <ul>
+                                            ${item.benefits.map(benefit => `<li>${benefit}</li>`).join('')}
+                                        </ul>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                $("#solar-info").html(content);
+            });
+
+            // Cargar los datos al hacer clic en el botón
+            $("#cargarDatos").click(function () {
+                $.get("/cargarfuentedatos", function (data) {
+                    $("#contenido").html(data);
+                });
+            });
+        });
+
+        // Función para mostrar gráficos
+        function mostrarGrafico() {
+            const pais = $("#sl_paises").val();
+            const grafico = $("#sl_grafico").val();
+
+            if (!pais || !grafico) {
+                alert("Por favor, selecciona un país y un tipo de gráfico.");
+                return;
+            }
+
+            $.get(`/graficar/${pais}/${grafico}`, function (data) {
+                $("#grafico").html(data);
+            });
+        }
+
+        const electrodomesticos = [];
+
+        function agregarElectrodomestico() {
+            const nombre = document.getElementById('electrodomestico').value;
+            const consumoMensual = parseFloat(document.getElementById('consumo').value);
+
+            if (nombre && !isNaN(consumoMensual)) {
+                electrodomesticos.push({ nombre, consumoMensual });
+                actualizarLista();
+                document.getElementById('electrodomestico').value = '';
+                document.getElementById('consumo').value = '';
+            } else {
+                alert("Por favor, ingrese un electrodoméstico y su consumo mensual en kWh.");
+            }
+        }
+
+        function actualizarLista() {
+            const lista = document.getElementById('listaElectrodomesticos');
+            lista.innerHTML = '';
+            electrodomesticos.forEach(item => {
+                const li = document.createElement('li');
+                li.className = 'list-group-item';
+                li.textContent = `${item.nombre}: ${item.consumoMensual} kWh/mes`;
+                lista.appendChild(li);
+            });
+        }
+
+        function calcular() {
+            const consumoAnual = electrodomesticos.reduce((sum, item) => sum + (item.consumoMensual * 12), 0);
+            const horasSolPicoAnual = 1277; // Medellín, aproximado.
+            const potenciaPanel = 0.55; // kW (550W por panel).
+            const potenciaTotal = consumoAnual / horasSolPicoAnual;
+            const numeroPaneles = Math.ceil(potenciaTotal / potenciaPanel);
+            document.getElementById('paneles').textContent = `Número de paneles necesarios: ${numeroPaneles}`;
+            document.getElementById('resultado').style.display = 'block';
+        }
+    </script>
+</body>
+</html>
